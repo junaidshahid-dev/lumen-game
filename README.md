@@ -7,6 +7,15 @@ the phone.
 Built as a native Android app in Kotlin with a hand-written OpenGL ES 3.0
 renderer — no game engine, no WebView, no third-party graphics library.
 
+<p align="center">
+  <img src="docs/screen-board.png" width="30%" alt="A fresh board">
+  <img src="docs/screen-midgame.png" width="30%" alt="Mid-game, showing the colour ramp">
+  <img src="docs/screen-zen.png" width="30%" alt="Zen mode">
+</p>
+
+<sup>Captured automatically on an emulator by the build — see
+[`ci/screenshot.sh`](ci/screenshot.sh).</sup>
+
 ## What's in it
 
 | | |

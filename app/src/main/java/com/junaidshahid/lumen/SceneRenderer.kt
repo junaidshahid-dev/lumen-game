@@ -13,6 +13,7 @@ import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -31,7 +32,11 @@ class SceneRenderer(private val game: Game) : GLSurfaceView.Renderer {
     private val cell = 1.0f
     private val tileHalf = 0.42f
     private val tileHeight = 0.17f
-    private val slabHalf = (grid - 1) * 0.5f * cell + tileHalf + 0.15f
+    // The margin has to cover more than the tile's own half-width. Tiles stand
+    // proud of the slab, and anything raised above a surface projects outward
+    // from the camera's point of view — with too small a margin the back row
+    // visibly floats off the far edge.
+    private val slabHalf = (grid - 1) * 0.5f * cell + tileHalf + 0.32f
     private val slabHeight = 0.15f
     private val tileY = slabHeight + tileHeight
 
@@ -134,16 +139,29 @@ class SceneRenderer(private val game: Game) : GLSurfaceView.Renderer {
 
         // Fit by width: on a portrait phone the board is the widest thing on
         // screen, and the spare vertical room becomes the header and controls.
+        //
+        // The fit is solved against the slab's near-bottom corner rather than
+        // against its centre. That corner sits closest to the camera, so it
+        // projects widest, and fitting the centre instead leaves a guessed
+        // safety factor that is either wasteful or wrong.
         val aspect = viewportW.toFloat() / viewportH.toFloat()
+
         val dist = hypot(
-            hypot(eye[0] - target[0], eye[1] - target[1]),
-            eye[2] - target[2]
+            hypot(target[0] - eye[0], target[1] - eye[1]),
+            target[2] - eye[2]
         )
-        // The near edge of the slab sits ~9% closer to the camera than its centre,
-        // so it projects wider than the centre-distance fit would suggest. The
-        // 1.12 factor pays for that, and the constant is plain margin.
-        val wanted = slabHalf * 1.12f + 0.14f
-        val tanH = wanted / dist
+        val fx = (target[0] - eye[0]) / dist
+        val fy = (target[1] - eye[1]) / dist
+        val fz = (target[2] - eye[2]) / dist
+
+        val ex = slabHalf - eye[0]
+        val ey = -slabHeight - eye[1]
+        val ez = slabHalf - eye[2]
+        val depth = ex * fx + ey * fy + ez * fz
+
+        // The camera never rolls, so its right axis is world +X and the corner's
+        // horizontal offset is simply ex.
+        val tanH = abs(ex) / depth * FIT_MARGIN
         val tanV = tanH / aspect
         val near = 1.0f
         Matrix.frustumM(proj, 0, -tanH * near, tanH * near, -tanV * near, tanV * near, near, 60f)
@@ -513,5 +531,8 @@ class SceneRenderer(private val game: Game) : GLSurfaceView.Renderer {
         private const val SPAWN_START = 0.45f
 
         private const val LUMEN_SEED = 0x4C554D45L
+
+        /** Breathing room left around the widest projected corner of the slab. */
+        private const val FIT_MARGIN = 1.04f
     }
 }

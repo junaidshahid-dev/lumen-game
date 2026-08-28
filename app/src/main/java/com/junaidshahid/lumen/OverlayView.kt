@@ -170,13 +170,12 @@ class OverlayView(context: Context) : View(context) {
         val cardH = dp(58f)
         val gap = dp(9f)
         val right = width - side
-        drawStatCard(canvas, RectF(right - cardW, top, right, top + cardH), "SCORE",
-            shownScore.roundToLong().toString(), true)
-        drawStatCard(
-            canvas,
-            RectF(right - cardW * 2 - gap, top, right - cardW - gap, top + cardH),
-            "BEST", g.best.toString(), false
-        )
+
+        // Score first, best second, reading left to right.
+        val scoreRect = RectF(right - cardW * 2 - gap, top, right - cardW - gap, top + cardH)
+        val bestRect = RectF(right - cardW, top, right, top + cardH)
+        drawStatCard(canvas, scoreRect, "SCORE", shownScore.roundToLong().toString(), true)
+        drawStatCard(canvas, bestRect, "BEST", g.best.toString(), false)
 
         if (floaterAge < 1f) {
             val a = 1f - floaterAge
@@ -186,7 +185,7 @@ class OverlayView(context: Context) : View(context) {
             text.color = Color.argb((a * 235).toInt(), 150, 226, 200)
             canvas.drawText(
                 "+$floaterValue",
-                right - cardW / 2f,
+                scoreRect.centerX(),
                 top + cardH + dp(20f) - floaterAge * dp(22f),
                 text
             )

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Without this the scene stops at the cutout and leaves a black band across
+      the top of the screen. The overlay already respects the cutout inset, so
+      nothing lands underneath the camera hole.
+    -->
+    <style name="Theme.Lumen" parent="Theme.Lumen.Base">
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

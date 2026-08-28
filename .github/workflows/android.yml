@@ -32,6 +32,12 @@ jobs:
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace
 
+      # R8 and resource shrinking only run in the release variant. Building it
+      # unsigned on every push means the first *signed* build is not also the
+      # first minified one, which is two new failure modes at once.
+      - name: Build release APK (unsigned, to exercise R8)
+        run: gradle :app:assembleRelease --stacktrace
+
       - name: Report APK size
         run: |
           echo "### Debug APK" >> $GITHUB_STEP_SUMMARY
@@ -137,19 +143,23 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/lumen.jks"
 
-      - name: Build signed AAB
+      # Both outputs are needed: the .aab is what Play accepts, the .apk is what
+      # a person can actually sideload from a GitHub Release.
+      - name: Build signed APK and Play bundle
         if: steps.check.outputs.signed == 'true'
         env:
           LUMEN_KEYSTORE: ${{ runner.temp }}/lumen.jks
           LUMEN_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           LUMEN_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           LUMEN_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: gradle :app:bundleRelease --stacktrace
+        run: gradle :app:assembleRelease :app:bundleRelease --stacktrace
 
-      - name: Upload Play bundle
+      - name: Upload signed release build
         if: steps.check.outputs.signed == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: lumen-release-aab
-          path: app/build/outputs/bundle/release/*.aab
+          name: lumen-release
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
           if-no-files-found: error

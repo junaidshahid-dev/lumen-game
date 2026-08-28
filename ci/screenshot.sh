@@ -8,8 +8,10 @@
 # wound mesh becomes visible.
 set -euo pipefail
 
-APK=$(ls artifact/*.apk | head -n 1)
-PKG=com.junaidshahid.lumen.debug
+# Works for either variant. The release build has no .debug suffix, and it is
+# the one that matters most here: it is the only variant R8 has touched.
+APK=$(find artifact -name '*.apk' | head -n 1)
+PKG=${LUMEN_PKG:-com.junaidshahid.lumen.debug}
 ACT=com.junaidshahid.lumen.MainActivity
 OUT=shots
 
@@ -33,6 +35,17 @@ shot() {
 
 # First frame after the GL context is up and the aurora has moved a little.
 shot 6 01-fresh-board
+
+# A GL failure tends to produce a blank frame rather than a crash, which no
+# logcat grep would catch. A rendered scene compresses to roughly a megabyte;
+# a flat black one is a few kilobytes, so file size is a cheap, dependency-free
+# proxy for "something was actually drawn".
+first_frame=$(stat -c%s "$OUT/01-fresh-board.png")
+echo "first frame: $first_frame bytes"
+if [ "$first_frame" -lt 100000 ]; then
+  echo "!! first frame is suspiciously small - the scene is probably not rendering"
+  exit 1
+fi
 
 # Four swipes, capturing mid-animation on the first so the slide is visible.
 swipe() { adb shell input swipe "$@"; }

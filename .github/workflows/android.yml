@@ -163,3 +163,43 @@ jobs:
             app/build/outputs/apk/release/*.apk
             app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
+
+      # The release APK is the one people actually install, and the only variant
+      # R8 has rewritten. Compiling it proves nothing about whether it runs, so
+      # it gets installed and played here exactly like the debug build.
+      - name: Enable KVM
+        if: steps.check.outputs.signed == 'true'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Stage release APK for the emulator
+        if: steps.check.outputs.signed == 'true'
+        run: |
+          mkdir -p artifact
+          cp app/build/outputs/apk/release/*.apk artifact/
+
+      - name: Run the release build on an emulator
+        if: steps.check.outputs.signed == 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          LUMEN_PKG: com.junaidshahid.lumen
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          ram-size: 2048M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none
+          disable-animations: false
+          script: bash ci/screenshot.sh
+
+      - name: Upload release screenshots
+        if: always() && steps.check.outputs.signed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-release-screenshots
+          path: shots/
+          if-no-files-found: warn

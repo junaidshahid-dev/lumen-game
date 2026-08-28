@@ -16,3 +16,4 @@ keystore.properties
 # Local build output and emulator capture; CI republishes both as artifacts.
 dist/
 shots/
+release/

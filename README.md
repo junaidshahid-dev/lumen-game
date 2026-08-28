@@ -4,6 +4,8 @@ A merge puzzle rendered in real 3D. Rounded glass tiles slide across a lit slab,
 merges pop and throw sparks, and the whole board drifts gently with the tilt of
 the phone.
 
+**[⬇ Download Lumen-1.0.0.apk](https://github.com/junaidshahid-dev/lumen-game/releases/latest/download/Lumen-1.0.0.apk)** — 364 KB, Android 7.0+
+
 Built as a native Android app in Kotlin with a hand-written OpenGL ES 3.0
 renderer — no game engine, no WebView, no third-party graphics library.
 
